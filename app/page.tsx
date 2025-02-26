@@ -51,8 +51,7 @@ export default function Home() {
     }
     
     // Create audio element for Doom theme
-    const basePath = process.env.NODE_ENV === 'production' ? '/your-repo-name' : '';
-    audioRef.current = new Audio(`${basePath}/doom-theme.mp3`);
+    audioRef.current = new Audio('/doom-theme.mp3');
     audioRef.current.loop = true;
     
     return () => {
