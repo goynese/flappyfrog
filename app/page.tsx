@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import styles from "./FlappyFrog.module.css";
+import DifficultySelector from "./components/DifficultySelector";
 
 // Define an interface for the tube object
 interface Tube {
@@ -22,6 +23,9 @@ export default function Home() {
   // Properly type the tubes state
   const [tubes, setTubes] = useState<Tube[]>([]);
   const [backgroundColor, setBackgroundColor] = useState('#B0E0E6'); // Initial light blue
+  const [showDifficultySelector, setShowDifficultySelector] = useState(true);
+  const [gravity, setGravity] = useState(0.6); // Default gravity
+  const [difficultyName, setDifficultyName] = useState("");
   
   // Refs for game state
   const gameAreaRef = useRef<HTMLDivElement>(null);
@@ -30,9 +34,9 @@ export default function Home() {
   const tubeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const frogPositionRef = useRef<number>(250);
   const frogVelocityRef = useRef<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Game constants
-  const GRAVITY = 0.6;
   const JUMP_FORCE = -10;
   const TUBE_WIDTH = 80;
   const TUBE_GAP = 180;
@@ -46,6 +50,10 @@ export default function Home() {
       gameAreaRef.current.focus();
     }
     
+    // Create audio element for Doom theme
+    audioRef.current = new Audio('/doom-theme.mp3');
+    audioRef.current.loop = true;
+    
     return () => {
       if (requestRef.current) {
         cancelAnimationFrame(requestRef.current);
@@ -53,18 +61,29 @@ export default function Home() {
       if (tubeIntervalRef.current) {
         clearInterval(tubeIntervalRef.current);
       }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 
+  // Handle difficulty selection
+  const handleSelectDifficulty = (selectedGravity: number, selectedDifficultyName: string) => {
+    setGravity(selectedGravity);
+    setDifficultyName(selectedDifficultyName);
+    setShowDifficultySelector(false);
+  };
+
   // Handle jump
   const handleJump = () => {
-    if (!gameStarted) {
+    if (!gameStarted && !showDifficultySelector) {
       startGame();
-    } else if (!gameOver) {
+    } else if (!gameOver && gameStarted) {
       // Set velocity directly on the ref for immediate effect
       frogVelocityRef.current = JUMP_FORCE;
       setFrogVelocity(JUMP_FORCE); // Update state for rendering
-    } else {
+    } else if (gameOver) {
       resetGame();
     }
   };
@@ -83,6 +102,12 @@ export default function Home() {
     
     setTubes([]);
     lastTimeRef.current = 0;
+    
+    // Start playing the Doom theme
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+    }
     
     // Generate tubes at regular intervals
     tubeIntervalRef.current = setInterval(() => {
@@ -109,6 +134,7 @@ export default function Home() {
     setGameStarted(false);
     setGameOver(false);
     setScore(0);
+    setShowDifficultySelector(true);
     
     frogPositionRef.current = 250;
     frogVelocityRef.current = 0;
@@ -116,6 +142,12 @@ export default function Home() {
     setFrogVelocity(0);
     
     setTubes([]);
+    
+    // Stop the music
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     
     if (tubeIntervalRef.current) {
       clearInterval(tubeIntervalRef.current);
@@ -135,7 +167,7 @@ export default function Home() {
     lastTimeRef.current = timestamp;
 
     // Apply gravity to velocity using refs for immediate effect
-    frogVelocityRef.current += GRAVITY;
+    frogVelocityRef.current += gravity;
     
     // Update frog position based on velocity
     frogPositionRef.current += frogVelocityRef.current;
@@ -146,6 +178,10 @@ export default function Home() {
       if (tubeIntervalRef.current) {
         clearInterval(tubeIntervalRef.current);
         tubeIntervalRef.current = null;
+      }
+      // Stop the music
+      if (audioRef.current) {
+        audioRef.current.pause();
       }
     } else {
       // Update the state values for rendering
@@ -184,6 +220,10 @@ export default function Home() {
             if (tubeIntervalRef.current) {
               clearInterval(tubeIntervalRef.current);
               tubeIntervalRef.current = null;
+            }
+            // Stop the music
+            if (audioRef.current) {
+              audioRef.current.pause();
             }
           }
 
@@ -315,13 +355,26 @@ export default function Home() {
           Score: {score}
         </div>
         
-        {/* Start/Game Over message */}
-        {!gameStarted && (
+        {/* Difficulty display */}
+        {gameStarted && (
+          <div className={styles.difficultyDisplay}>
+            Difficulty: {difficultyName}
+          </div>
+        )}
+        
+        {/* Difficulty Selector */}
+        {showDifficultySelector && (
+          <DifficultySelector onSelectDifficulty={handleSelectDifficulty} />
+        )}
+        
+        {/* Start message */}
+        {!gameStarted && !showDifficultySelector && (
           <div className={styles.message}>
             Click or Press Space to Start
           </div>
         )}
         
+        {/* Game Over message */}
         {gameOver && (
           <div className={styles.message}>
             Game Over! Score: {score}<br/>

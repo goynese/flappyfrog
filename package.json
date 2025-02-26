@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d out"
+    "clean": "rm -rf .next out",
+    "predeploy": "npm run clean && npm run build",
+    "deploy": "node scripts/deploy.js"
   },
   "dependencies": {
     "next": "15.1.7",
