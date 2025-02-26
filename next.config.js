@@ -2,9 +2,9 @@
 const nextConfig = {
   output: 'export',
   // This setting is required if you're deploying to GitHub Pages
-  basePath: process.env.NODE_ENV === 'production' ? '/flappyfrog' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/your-repo-name' : '',
   // Add this to ensure assets are correctly referenced
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/flappyfrog' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/your-repo-name/' : '',
   // Disable image optimization since GitHub Pages doesn't support it
   images: {
     unoptimized: true,
